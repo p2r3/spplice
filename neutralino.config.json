@@ -1,6 +1,6 @@
 {
   "applicationId": "com.p2r3.spplice",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "defaultMode": "window",
   "port": 0,
   "documentRoot": "/resources/",
@@ -23,8 +23,8 @@
       "title": "Spplice",
       "width": 800,
       "height": 500,
-      "minWidth": 400,
-      "minHeight": 200,
+      "minWidth": 800,
+      "minHeight": 500,
       "fullScreen": false,
       "alwaysOnTop": false,
       "icon": "/resources/icon.png",

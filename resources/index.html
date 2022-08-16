@@ -2,7 +2,6 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Spplice</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="icon.png">
@@ -11,13 +10,23 @@
 
     <h1 id="spplice-title">Spplice Packages</h1>
     <p id="spplice-clear" onclick="launchMod(-1)">clear mods</p>
-    <div id="cardlist"></div>
+
+    <div id="search">
+      <img src="search.png" id="search-icon"><input id="search-input" type="text" placeholder="Search" oninput="updateSearch()">
+    </div>
+
+    <div id="cardlist">
+      <span id="cardlist-insert"></span>
+      <div class="card" style="background-image: url('add.png')" onclick="importCustom()"></div>
+    </div>
     <p id="pplaunch-status"></p>
     <div id="modinfo">
       <div id="modinfo-close" onclick="hideInfo()">&#10006;</div>
       <h2 id="modinfo-title"></h2>
       <p id="modinfo-description"></p>
-      <p id="modinfo-button">Install and launch</p>
+      <p id="modinfo-button">
+        <span>Install and launch</span>
+      </p>
     </div>
 
     <script src="js/neutralino.js"></script>

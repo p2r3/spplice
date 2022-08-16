@@ -98,7 +98,7 @@ async function loadCards() {
       image = `https://p2r3.com/spplice/packages/${name}/${curr.icon}?r=${r}`;
     }
 
-    document.getElementById("cardlist").innerHTML += `
+    document.getElementById("cardlist-insert").innerHTML += `
       <div class="card" style="background-image: url('${image}')" onclick="showInfo(${i})">
         <p class="card-title">${title}</p>
       </div>
@@ -117,14 +117,27 @@ function showInfo(packageID) {
 
   title.innerHTML = index.packages[packageID].title;
   description.innerHTML = index.packages[packageID].description.replace(/\n/g, "<br>");
-  button.onclick = function() { launchMod(packageID) };
+  button.onclick = function() {  };
 
   if(packageID === activePackage) {
     button.innerHTML = "Installed";
     button.style.pointerEvents = "none";
     button.style.color = "#424242";
   } else {
-    button.innerHTML = "Install and launch";
+    if("local" in index.packages[packageID] && index.packages[packageID].local) {
+
+      button.innerHTML = `
+        <span id="modinfo-delete" onclick="removePackage(${packageID})">Remove</span><br>
+        <span onclick="launchMod(${packageID})">Install and launch<span>
+      `;
+
+    } else {
+
+      button.innerHTML = `
+        <span onclick="launchMod(${packageID})">Install and launch</span>
+      `;
+
+    }
     button.style.pointerEvents = "auto";
     button.style.color = "#faa81a";
   }
@@ -177,6 +190,116 @@ function setActivePackage(packageID) {
 
 }
 
+function updateSearch() {
+
+  const query = document.getElementById("search-input").value.replace(/ /g, "").toLowerCase();
+
+  for(let i = 0; i < index.packages.length; i++) {
+
+    const title = index.packages[i].title.replace(/ /g, "").toLowerCase();
+    const name = index.packages[i].name.replace(/ /g, "").toLowerCase();
+    if(title.indexOf(query) != -1 || name.indexOf(query) != -1) {
+      document.getElementsByClassName("card")[i].style.display = "inline-block";
+    } else {
+      document.getElementsByClassName("card")[i].style.display = "none";
+    }
+
+  }
+
+}
+
+async function importCustom() {
+
+  const filter = {
+    filters: [{
+      name: "Tar archive",
+      extensions: ["tar.gz"]
+    }]
+  };
+  const file = (await Neutralino.os.showOpenDialog("Select custom package", filter))[0];
+  if(!file) return;
+
+  try { await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom/.tmp`) }
+  catch (e) { await Neutralino.filesystem.createDirectory(`${NL_PATH}/custom/.tmp`) }
+
+  await Neutralino.os.execCommand(`tar -xzf "${file}" -C "${NL_PATH}/custom/.tmp"`);
+
+  try {
+
+    const tmpdir = await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom/.tmp`);
+    for(let i = 0; i < tmpdir.length; i++) {
+      if(tmpdir[i].entry !== "." && tmpdir[i].entry !== "..") {
+
+        const manifest = JSON.parse(await Neutralino.filesystem.readFile(`${NL_PATH}/custom/.tmp/${tmpdir[i].entry}/manifest.json`));
+        manifest.local = true;
+
+        var id = -1;
+        for(let j = 0; j < index.packages.length; j++) {
+          if(index.packages[j].name === manifest.name) {
+            id = j;
+            break;
+          }
+        }
+
+        if(id === -1) id = index.packages.length;
+        index.packages[id] = manifest;
+
+        break;
+
+      }
+    }
+
+    await Neutralino.filesystem.moveFile(`${NL_PATH}/custom/.tmp/${index.packages[id].name}`, `${NL_PATH}/custom/${index.packages[id].name}`);
+    await forceRemoveDirectory(`${NL_PATH}/custom/.tmp`);
+
+  } catch (e) {
+
+    Neutralino.os.showMessageBox(
+      "Invalid package",
+      "An error occured while installing the package. Are you sure this is the right file?",
+      "OK",
+      "ERROR"
+    );
+    console.log(e);
+    await forceRemoveDirectory(`${NL_PATH}/custom/.tmp`);
+    return;
+
+  }
+
+  const title = index.packages[id].title;
+  const name = index.packages[id].name;
+  const icon = index.packages[id].icon;
+
+  const base64 = arrayBufferToBase64(await Neutralino.filesystem.readBinaryFile(`${NL_PATH}/custom/${name}/${icon}`));
+  const image = `data:image/png;base64,${base64}`;
+
+  document.getElementById("cardlist-insert").innerHTML += `
+    <div class="card" style="background-image: url('${image}')" onclick="showInfo(${id})">
+      <p class="card-title">${title}</p>
+    </div>
+  `;
+
+}
+
+async function removePackage(packageID) {
+
+  const choice = await Neutralino.os.showMessageBox(
+    "Confirm deletion",
+    "Are you sure you want to delete this mod?",
+    "YES_NO",
+    "WARNING"
+  );
+
+  if(choice === "YES") {
+
+    hideInfo();
+    await forceRemoveDirectory(`${NL_PATH}/custom/${index.packages[packageID].name}`);
+    document.getElementsByClassName("card")[packageID].remove();
+
+  }
+
+}
+
 var statusTextTimeout = null;
 function setStatusText(text, hide) {
 
@@ -184,12 +307,14 @@ function setStatusText(text, hide) {
 
   console.log(text);
   let element = document.getElementById("pplaunch-status");
+  element.style.pointerEvents = "all";
   element.style.opacity = 1;
   element.innerHTML = text;
 
   if(hide) {
     clearTimeout(statusTextTimeout);
     statusTextTimeout = setTimeout(function() {
+      element.style.pointerEvents = "none";
       element.style.opacity = 0;
     }, 5000);
   }

@@ -105,7 +105,7 @@ i {
 #cardlist {
   position: relative;
   margin: 0 0 0 5vw;
-  padding: 6vw;
+  padding: 8vh 6vw 6vw 6vw;
   width: 78vw;
   /* HACK: Remove whitespaces between DIVs */
   font-size: 0;
@@ -141,6 +141,7 @@ i {
 }
 
 #pplaunch-status {
+  pointer-events: none;
   position: fixed;
   left: 0;
   bottom: 0;
@@ -195,14 +196,54 @@ i {
   bottom: 0;
   width: 100%;
   text-align: center;
-  font-size: 1.3rem;
   letter-spacing: 0;
-  color: #faa81a;
+}
+#modinfo-button span {
   cursor: pointer;
+  font-family: 'Quicksand', sans-serif;
+  font-size: 1.3rem;
+  color: #faa81a;
   transition: color 0.2s, letter-spacing 0.2s;
 }
-#modinfo-button:hover {
+#modinfo-delete {
+  color: #ff6461 !important;
+}
+#modinfo-button span:hover {
   letter-spacing: 0.1rem;
-  color: #fff;
+  color: #fff !important;
 }
 
+#search {
+  position: relative;
+  width: 30vw;
+  height: 5vh;
+  border: 1px solid white;
+  border-radius: 5px;
+  margin: 2vh 0 0 0;
+  transform: translateX(calc(50vw - 50%));
+}
+#search-icon {
+  position: absolute;
+  top: 0.75vh;
+  left: 0.75vh;
+  width: 3.5vh;
+  height: 3.5vh;
+}
+#search-input {
+  position: absolute;
+  left: 6vh;
+  top: 0;
+  width: calc(100% - 7vh);
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background: 0;
+  border: 0;
+
+  user-select: all;
+  -ms-user-select: all;
+  -moz-user-select: all;
+  -webkit-user-select: all;
+
+  color: white;
+}
