@@ -15,6 +15,8 @@
   "nativeAllowList": [
     "app.*",
     "os.*",
+    "computer.*",
+    "window.*",
     "filesystem.*",
     "debug.log"
   ],

@@ -42,8 +42,28 @@ async function forceRemoveDirectory(path) {
 
 }
 
+async function updateResolution() {
+
+  let displays = await Neutralino.computer.getDisplays()
+  let display = displays[0];
+
+  // Recalculate resolution including screen size and dpi
+  let ogWidth = 800;
+  let ogHeightMultip = ogWidth / 500;
+
+  let width = (display.dpi / 96) * // 96 dpi reference 
+              (display.resolution.width / 1920) *  // 1920 width reference
+              ogWidth;
+  let height = width / ogHeightMultip; // 8:5 ratio
+
+  Neutralino.window.setSize({width: width, height: height});
+
+}
+
 var index, activePackage = -1;
 async function loadCards() {
+
+  await updateResolution();
 
   const r = Math.floor(Math.random() * 1000); // Prevent caching
   let response = await fetch("https://p2r3.com/spplice/packages/index.php?r=" + r);
@@ -105,7 +125,6 @@ async function loadCards() {
     `;
 
   }
-
 }
 
 function showInfo(packageID) {
