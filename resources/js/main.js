@@ -44,6 +44,9 @@ async function forceRemoveDirectory(path) {
 
 async function updateResolution() {
 
+  if (NL_OS != "Windows")
+    return;
+
   let displays = await Neutralino.computer.getDisplays()
   let display = displays[0];
 
