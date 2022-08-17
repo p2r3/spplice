@@ -44,20 +44,19 @@ async function forceRemoveDirectory(path) {
 
 async function updateResolution() {
 
-  if (NL_OS != "Windows")
-    return;
+  if (NL_OS === "Windows") return;
 
-  let displays = await Neutralino.computer.getDisplays()
-  let display = displays[0];
+  const display = (await Neutralino.computer.getDisplays())[0];
+  const config = await Neutralino.app.getConfig();
 
   // Recalculate resolution including screen size and dpi
-  let ogWidth = 800;
-  let ogHeightMultip = ogWidth / 500;
+  const ogWidth = config.modes.window.width;
+  const ogHeightMultip = ogWidth / config.modes.window.height;
 
-  let width = (display.dpi / 96) * // 96 dpi reference 
+  const width = (display.dpi / 96) * // 96 dpi reference 
               (display.resolution.width / 1920) *  // 1920 width reference
               ogWidth;
-  let height = width / ogHeightMultip; // 8:5 ratio
+  const height = width / ogHeightMultip; // 8:5 ratio
 
   Neutralino.window.setSize({width: width, height: height});
 
