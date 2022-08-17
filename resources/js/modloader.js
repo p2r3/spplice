@@ -137,7 +137,7 @@ async function installMod(path, packageID) {
     }
   } catch (e) {}
 
-  // Unistall and exit
+  // Uninstall and exit
   if(packageID < 0) return;
 
   // Get package repository URL
