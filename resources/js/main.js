@@ -125,6 +125,7 @@ async function loadCards() {
     `;
 
   }
+
 }
 
 function showInfo(packageID) {
