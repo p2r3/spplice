@@ -2,4 +2,5 @@
 .tmp
 bin
 dist
+custom
 /resources/js/neutralino.js
