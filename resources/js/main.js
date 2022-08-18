@@ -42,8 +42,30 @@ async function forceRemoveDirectory(path) {
 
 }
 
+async function updateResolution() {
+
+  if (NL_OS === "Windows") return;
+
+  const display = (await Neutralino.computer.getDisplays())[0];
+  const config = await Neutralino.app.getConfig();
+
+  // Recalculate resolution including screen size and dpi
+  const ogWidth = config.modes.window.width;
+  const ogHeightMultip = ogWidth / config.modes.window.height;
+
+  const width = (display.dpi / 96) * // 96 dpi reference 
+              (display.resolution.width / 1920) *  // 1920 width reference
+              ogWidth;
+  const height = width / ogHeightMultip; // 8:5 ratio
+
+  Neutralino.window.setSize({width: width, height: height});
+
+}
+
 var index, activePackage = -1;
 async function loadCards() {
+
+  await updateResolution();
 
   const r = Math.floor(Math.random() * 1000); // Prevent caching
   let response = await fetch("https://p2r3.com/spplice/packages/index.php?r=" + r);

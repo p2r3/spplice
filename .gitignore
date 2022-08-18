@@ -1,0 +1,4 @@
+# NeutralinoJS related files
+.tmp
+bin
+dist
