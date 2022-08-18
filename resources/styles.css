@@ -134,8 +134,10 @@ i {
   left: 0;
   width: 100%;
   margin: 0;
-  padding: 5px 0;
+  padding: 3px 0;
+  font-size: 0.95rem;
   text-align: center;
+  cursor: default;
   background-color: rgba(0, 0, 0, 0.7);
   transition: color 0.5s;
 }
