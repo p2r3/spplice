@@ -22,15 +22,15 @@ a {
   text-decoration: underline;
   color: #faa81a;
 }
-span {
-  font-family: monospace;
-  font-weight: normal;
-  color:rgb(150,150,150);
-}
 i {
   color:#424242;
 }
 
+.monospace {
+  font-family: monospace;
+  font-weight: normal;
+  color: rgb(150, 150, 150);
+}
 .center-text {
   text-align: center;
 }
@@ -95,11 +95,13 @@ i {
   margin: 0;
   color: #faa81a;
   letter-spacing: 0.2rem;
-  cursor: pointer;
   pointer-events: none;
   opacity: 0;
   will-change: opacity;
   transition: opacity 0.5s;
+}
+#spplice-clear span {
+  cursor: pointer;
 }
 
 #cardlist {
@@ -202,7 +204,6 @@ i {
 }
 #modinfo-button span {
   cursor: pointer;
-  font-family: 'Quicksand', sans-serif;
   font-size: 1.3rem;
   color: #faa81a;
   transition: color 0.2s, letter-spacing 0.2s;
