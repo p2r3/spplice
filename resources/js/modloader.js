@@ -31,6 +31,7 @@ async function getGameProcessInfo() {
     case "Windows": {
 
       const pwsh = (await Neutralino.os.execCommand(`powershell -command "Get-Process 'portal2' | Format-List Id"`)).stdOut;
+      if (pwsh.indexOf("Id : ") === -1) return 0;
       return Number( pwsh.split("Id : ")[1].split("\n")[0] );
 
     }
