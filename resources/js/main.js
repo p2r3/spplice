@@ -1,5 +1,8 @@
 Neutralino.init();
 
+// OS-dependant path separators
+const S = (NL_OS === "Windows" ? '\\' : '/');
+
 async function autoUpdate() {
   try {
     let url = "https://p2r3.com/spplice/app/manifest.json?r=" + Math.floor(Math.random() * 1000);
@@ -28,13 +31,13 @@ function arrayBufferToBase64(buffer) {
 
 async function forceRemoveDirectory(path) {
 
-  if(path[path.length - 1] !== '/' || path[path.length - 1] !== '\\') path += "/";
+  if(path[path.length - 1] !== S) path += S;
   const dir = await Neutralino.filesystem.readDirectory(path);
 
   for(let i = 0; i < dir.length; i++) {
     if(dir[i].type === "FILE") await Neutralino.filesystem.removeFile(path + dir[i].entry);
     else if(dir[i].entry !== "." && dir[i].entry !== "..") {
-      await forceRemoveDirectory(path + "/" + dir[i].entry);
+      await forceRemoveDirectory(`${path}${S}${dir[i].entry}`);
     }
   }
 
@@ -89,7 +92,7 @@ async function loadCards() {
     const curr = customDir[i];
     if(curr.entry === "." || curr.entry === "..") continue;
     if(curr.type === "FILE" && curr.entry.endsWith(".tar.gz")) {
-      await Neutralino.os.execCommand(`tar -xzf "${NL_PATH}/custom/${curr.entry}" -C "${NL_PATH}/custom/"`);
+      await Neutralino.os.execCommand(`tar -xzf "${NL_PATH}${S}custom${S}${curr.entry}" -C "${NL_PATH}${S}custom${S}"`);
       await Neutralino.filesystem.removeFile(`${NL_PATH}/custom/${curr.entry}`);
     }
   }
@@ -244,7 +247,7 @@ async function importCustom() {
   try { await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom/.tmp`) }
   catch (e) { await Neutralino.filesystem.createDirectory(`${NL_PATH}/custom/.tmp`) }
 
-  await Neutralino.os.execCommand(`tar -xzf "${file}" -C "${NL_PATH}/custom/.tmp"`);
+  await Neutralino.os.execCommand(`tar -xzf "${file}" -C "${NL_PATH}${S}custom${S}.tmp"`);
 
   try {
 

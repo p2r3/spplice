@@ -10,7 +10,14 @@ async function getGameDirectory(steamPath) {
   for (let i = 1; i < dirs.length; i++) {
     if (dirs[i].split('"apps"')[1].indexOf('"620"') !== -1) {
 
-      return dirs[i].split('"')[1] + "/steamapps/common/Portal 2";
+      return dirs[i].split('"') // Isolate properties
+        .slice(1) // Jump to start of path 
+        .join('"') // Rebuild string in case path has quotes
+        .split("\n")[0] // Include only this line
+        .slice(0, -1) // Remove last quote
+        .replace(/\\\\/g, "\\") // Fix double backslashes on Windows
+        .replace(/\\"/g, '"') // Fix escaped quotes in path
+        + "/steamapps/common/Portal 2"; // Add Portal 2 directory
 
     }
   }
@@ -122,7 +129,7 @@ async function getSteamProcessInfo() {
 async function installMod(p2path, packageID) {
 
   // Ensure that portal2_tempcontent is ready for package extraction
-  const path = p2path + "/portal2_tempcontent";
+  const path = `${p2path}${S}portal2_tempcontent`;
   try {
     const curr = await Neutralino.filesystem.readDirectory(path);
     try {
@@ -159,7 +166,7 @@ async function installMod(p2path, packageID) {
   await Neutralino.filesystem.copyFile(path + "/../portal2/maps/soundcache/_master.cache", path + "/maps/soundcache/_master.cache");
 
   // Download (or copy) package
-  var pkg = path + "/spp.tar.gz";
+  var pkg = `${path}${S}spp.tar.gz`;
   if (!("local" in currPackage) || !currPackage.local) {
 
     const curl = await Neutralino.os.execCommand(`curl -s ${url} -o"${pkg}"`);
