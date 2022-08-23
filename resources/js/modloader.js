@@ -17,7 +17,7 @@ async function getGameDirectory(steamPath) {
         .slice(0, -1) // Remove last quote
         .replace(/\\\\/g, "\\") // Fix double backslashes on Windows
         .replace(/\\"/g, '"') // Fix escaped quotes in path
-        + "/steamapps/common/Portal 2"; // Add Portal 2 directory
+        + `${S}steamapps${S}common${S}Portal 2`; // Add Portal 2 directory
 
     }
   }
@@ -30,9 +30,14 @@ async function getGameProcessInfo() {
 
     case "Windows": {
 
-      const pwsh = (await Neutralino.os.execCommand(`powershell -command "Get-Process 'portal2' | Format-List Id"`)).stdOut;
-      if (pwsh.indexOf("Id : ") === -1) return 0;
-      return Number( pwsh.split("Id : ")[1].split("\n")[0] );
+      const pwsh = Neutralino.os.execCommand(`powershell -command "Get-Process 'portal2' | Format-List Id"`);
+      const timeout = new Promise (function (resolve) {
+        setTimeout(resolve, 5000, { stdOut: "" });
+      });
+      
+      const out = (await Promise.race( [timeout, pwsh] )).stdOut;
+      if (out.indexOf("Id : ") === -1) return 0;
+      return Number( out.split("Id : ")[1].split("\n")[0] );
 
     }
 
