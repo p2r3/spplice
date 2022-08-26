@@ -2,10 +2,12 @@ Neutralino.init();
 
 // OS-dependant path separators
 const S = (NL_OS === "Windows" ? '\\' : '/');
+// Package repository address
+const REPO = "95.217.182.22";
 
 async function autoUpdate() {
   try {
-    let url = "https://p2r3.com/spplice/app/manifest.json?r=" + Math.floor(Math.random() * 1000);
+    let url = `http://${REPO}/spplice/app/manifest.json?r=` + Math.floor(Math.random() * 1000);
     let manifest = await Neutralino.updater.checkForUpdates(url);
 
     if(manifest.version != NL_APPVERSION) {
@@ -71,7 +73,7 @@ async function loadCards() {
   await updateResolution();
 
   const r = Math.floor(Math.random() * 1000); // Prevent caching
-  let response = await fetch("https://p2r3.com/spplice/packages/index.php?r=" + r);
+  let response = await fetch(`http://${REPO}/spplice/packages/index.php?r=` + r);
 
   if(response.ok) {
     index = await response.json();
@@ -120,7 +122,7 @@ async function loadCards() {
       const base64 = arrayBufferToBase64(await Neutralino.filesystem.readBinaryFile(`${NL_PATH}/custom/${curr.name}/${curr.icon}`));
       image = `data:image/png;base64,${base64}`;
     } else {
-      image = `https://p2r3.com/spplice/packages/${name}/${curr.icon}?r=${r}`;
+      image = `http://${REPO}/spplice/packages/${name}/${curr.icon}?r=${r}`;
     }
 
     document.getElementById("cardlist-insert").innerHTML += `

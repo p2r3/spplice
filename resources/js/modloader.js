@@ -162,14 +162,33 @@ async function installMod(p2path, packageID) {
 
   // Get package repository URL
   const currPackage = index.packages[packageID];
-  const url = `https://p2r3.com/spplice/packages/${currPackage.name}/${currPackage.file}`;
+  const url = `http://${REPO}/spplice/packages/${currPackage.name}/${currPackage.file}`;
 
-  await Neutralino.filesystem.createDirectory(path);
-  await Neutralino.filesystem.writeFile(path + "/.spplice_tmp", "");
+  try {
 
-  await Neutralino.filesystem.createDirectory(path + "/maps");
-  await Neutralino.filesystem.createDirectory(path + "/maps/soundcache");
-  await Neutralino.filesystem.copyFile(path + "/../portal2/maps/soundcache/_master.cache", path + "/maps/soundcache/_master.cache");
+    try { await Neutralino.filesystem.readDirectory(path) }
+    catch (e) { await Neutralino.filesystem.createDirectory(path) }
+    
+    try { await Neutralino.filesystem.readFile(path + "/.spplice_tmp") }
+    catch (e) { await Neutralino.filesystem.writeFile(path + "/.spplice_tmp", "") }
+  
+    await Neutralino.filesystem.createDirectory(path + "/maps").catch();
+    await Neutralino.filesystem.createDirectory(path + "/maps/soundcache").catch();
+    await Neutralino.filesystem.copyFile(path + "/../portal2/maps/soundcache/_master.cache", path + "/maps/soundcache/_master.cache").catch();
+
+  } catch (e) {
+
+    const adminName = (NL_OS === "Windows" ? "Administrator" : "root");
+
+    Neutralino.os.showMessageBox(
+      "Installation failed",
+      `Failed to write installation files. This is probably a permissions issue - try running Spplice as ${adminName}.`,
+      "OK",
+      "ERROR"
+    );
+    return;
+
+  }
 
   // Download (or copy) package
   var pkg = `${path}${S}spp.tar.gz`;
