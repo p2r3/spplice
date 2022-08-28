@@ -223,11 +223,17 @@ async function installMod(p2path, packageID) {
 
   // Install package
   try {
-    await Neutralino.os.execCommand(`tar -xzf "${pkg}" -C "${path}"`);
+    const tar = await Neutralino.os.execCommand(`tar -xzf --force-local "${pkg}" -C "${path}"`);
+    if (tar.exitCode !== 0) throw tar.stdErr;
     await Neutralino.filesystem.removeFile(pkg);
   } catch (e) {
-    setStatusText("Failed to install package", true);
-    console.log(e);
+    if (typeof e === "object") e = JSON.stringify(e);
+    Neutralino.os.showMessageBox(
+      "Installation failed",
+      "Failed to extract archive: " + e,
+      "OK",
+      "ERROR"
+    );
     return;
   }
 
