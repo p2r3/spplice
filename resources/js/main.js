@@ -2,8 +2,8 @@ Neutralino.init();
 
 // OS-dependant path separators
 const S = (NL_OS === "Windows" ? '\\' : '/');
-// OS-dependant Tar arguments
-const TAR_ARGS = (NL_OS === "Linux" ? "--force-local" : "");
+// OS-dependant Tar command line
+const TAR = (NL_OS === "Windows" ? "start C:\\Windows\\System32\\tar.exe" : "tar --force-local");
 // Package repository address
 const REPO = "95.217.182.22";
 
@@ -96,7 +96,7 @@ async function loadCards() {
     const curr = customDir[i];
     if(curr.entry === "." || curr.entry === "..") continue;
     if(curr.type === "FILE" && curr.entry.endsWith(".tar.gz")) {
-      await Neutralino.os.execCommand(`tar ${TAR_ARGS} -xzf "${NL_PATH}${S}custom${S}${curr.entry}" -C "${NL_PATH}${S}custom${S}"`);
+      await Neutralino.os.execCommand(`${TAR} -xzf "${NL_PATH}${S}custom${S}${curr.entry}" -C "${NL_PATH}${S}custom${S}"`);
       await Neutralino.filesystem.removeFile(`${NL_PATH}/custom/${curr.entry}`);
     }
   }
@@ -251,7 +251,7 @@ async function importCustom() {
   try { await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom/.tmp`) }
   catch (e) { await Neutralino.filesystem.createDirectory(`${NL_PATH}/custom/.tmp`) }
 
-  await Neutralino.os.execCommand(`tar ${TAR_ARGS} -xzf "${file}" -C "${NL_PATH}${S}custom${S}.tmp"`);
+  await Neutralino.os.execCommand(`${TAR} -xzf "${file}" -C "${NL_PATH}${S}custom${S}.tmp"`);
 
   try {
 
