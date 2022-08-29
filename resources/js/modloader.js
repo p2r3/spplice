@@ -292,21 +292,26 @@ async function launchMod(packageID) {
 
     if (await getGameProcessInfo()) {
 
-      setStatusText("Portal 2 started", true);
-      clearInterval(gameStartInterval);
+      setTimeout(async function() { 
+        
+        setStatusText("Portal 2 started", true);
+        clearInterval(gameStartInterval);
+  
+        // Handle game closing
+        gameCloseInterval = setInterval(async function() {
+          if (!(await getGameProcessInfo())) {
+  
+            clearInterval(gameCloseInterval);
+  
+            setStatusText("Portal 2 closed", true);
+            setActivePackage(-1);
+            installMod(game.path, -1);
+  
+          }
+        }, 1500);
 
-      // Handle game closing
-      gameCloseInterval = setInterval(async function() {
-        if (!(await getGameProcessInfo())) {
+      }, 5000);
 
-          clearInterval(gameCloseInterval);
-
-          setStatusText("Portal 2 closed", true);
-          setActivePackage(-1);
-          installMod(game.path, -1);
-
-        }
-      }, 1500);
 
     }
   }, 3000);
