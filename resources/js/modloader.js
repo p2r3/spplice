@@ -223,7 +223,7 @@ async function installMod(p2path, packageID) {
 
   // Install package
   try {
-    const tar = await Neutralino.os.execCommand(`tar --force-local -xzf "${pkg}" -C "${path}"`);
+    const tar = await Neutralino.os.execCommand(`tar ${TAR_ARGS} -xzf "${pkg}" -C "${path}"`);
     if (tar.exitCode !== 0) throw tar.stdErr;
     await Neutralino.filesystem.removeFile(pkg);
   } catch (e) {
