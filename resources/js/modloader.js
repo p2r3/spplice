@@ -30,14 +30,10 @@ async function getGameProcessInfo() {
 
     case "Windows": {
 
-      const pwsh = Neutralino.os.execCommand(`powershell -command "Get-Process 'portal2' | Format-List Id"`);
-      const timeout = new Promise (function (resolve) {
-        setTimeout(resolve, 5000, { stdOut: "" });
-      });
-      
-      const out = (await Promise.race( [timeout, pwsh] )).stdOut;
-      if (out.indexOf("Id : ") === -1) return 0;
-      return Number( out.split("Id : ")[1].split("\n")[0] );
+      const tlist = (await Neutralino.os.execCommand(`tasklist /fo csv /nh /fi "IMAGENAME eq portal2.exe"`)).stdOut;
+
+      if (tlist.indexOf("portal2.exe") === -1) return 0;
+      return Number( tlist.split('"')[3] );
 
     }
 
@@ -291,27 +287,22 @@ async function launchMod(packageID) {
   gameStartInterval = setInterval(async function() {
 
     if (await getGameProcessInfo()) {
-
-      setTimeout(async function() { 
         
-        setStatusText("Portal 2 started", true);
-        clearInterval(gameStartInterval);
-  
-        // Handle game closing
-        gameCloseInterval = setInterval(async function() {
-          if (!(await getGameProcessInfo())) {
-  
-            clearInterval(gameCloseInterval);
-  
-            setStatusText("Portal 2 closed", true);
-            setActivePackage(-1);
-            installMod(game.path, -1);
-  
-          }
-        }, 1500);
+      setStatusText("Portal 2 started", true);
+      clearInterval(gameStartInterval);
 
-      }, 5000);
+      // Handle game closing
+      gameCloseInterval = setInterval(async function() {
+        if (!(await getGameProcessInfo())) {
 
+          clearInterval(gameCloseInterval);
+
+          setStatusText("Portal 2 closed", true);
+          setActivePackage(-1);
+          installMod(game.path, -1);
+
+        }
+      }, 1500);
 
     }
   }, 3000);
