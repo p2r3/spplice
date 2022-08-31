@@ -46,10 +46,14 @@ async function getGameProcessInfo() {
 
     case "Windows": {
 
-      const tlist = (await Neutralino.os.execCommand(`tasklist /fo csv /nh /fi "IMAGENAME eq portal2.exe"`)).stdOut;
+      const timer = new Promise(resolve => setTimeout(resolve, 2000, { stdOut: 'portal2.exe"""1' }));
+      const tlist = Neutralino.os.execCommand(`tasklist /fo csv /nh /fi "IMAGENAME eq portal2.exe"`);
+      
+      const out = (await Promise.race([timer, tlist])).stdOut;
+      console.log(out);
 
-      if (tlist.indexOf("portal2.exe") === -1) return 0;
-      return Number( tlist.split('"')[3] );
+      if (out.indexOf("portal2.exe") === -1) return 0;
+      return Number( out.split('"')[3] );
 
     }
 
@@ -308,7 +312,15 @@ async function launchMod(packageID) {
 
   setStatusText("Starting Portal 2...");
 
-  await Neutralino.os.execCommand(`${steam.cmd} -applaunch 620 ${packageID < 0 ? "" : "-tempcontent"} ${NL_OS !== "Windows" ? "&" : ""}`, { background: true });
+  if (NL_OS === "Windows") {
+
+    await Neutralino.os.execCommand(`${steam.cmd} -applaunch 620 -tempcontent`);
+
+  } else {
+
+    await Neutralino.os.execCommand(`${steam.cmd} -applaunch 620 -tempcontent &`, { background: true });
+
+  }
 
   setActivePackage(packageID);
 
