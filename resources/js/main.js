@@ -8,11 +8,12 @@ const TAR = (NL_OS === "Windows" ? "start C:\\Windows\\System32\\tar.exe" : "tar
 const REPO = "95.217.182.22";
 
 async function autoUpdate() {
+
   try {
     let url = `http://${REPO}/spplice/app/manifest.json?r=` + Math.floor(Math.random() * 1000);
     let manifest = await Neutralino.updater.checkForUpdates(url);
 
-    if(manifest.version != NL_APPVERSION) {
+    if (manifest.version != NL_APPVERSION) {
       await Neutralino.updater.install();
       setStatusText("Update installed, please restart Spplice");
       // await Neutralino.app.restartProcess();
@@ -20,27 +21,33 @@ async function autoUpdate() {
   } catch(e) {
     console.log("Error while checking for updates: " + e);
   }
+
 }
+
 autoUpdate();
 
 function arrayBufferToBase64(buffer) {
-  var binary = '';
+
+  var binary = "";
   var bytes = new Uint8Array(buffer);
   var len = bytes.byteLength;
+
   for (var i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
+
   return window.btoa(binary);
+
 }
 
 async function forceRemoveDirectory(path) {
 
-  if(path[path.length - 1] !== S) path += S;
+  if (path[path.length - 1] !== S) path += S;
   const dir = await Neutralino.filesystem.readDirectory(path);
 
-  for(let i = 0; i < dir.length; i++) {
-    if(dir[i].type === "FILE") await Neutralino.filesystem.removeFile(path + dir[i].entry);
-    else if(dir[i].entry !== "." && dir[i].entry !== "..") {
+  for (let i = 0; i < dir.length; i++) {
+    if (dir[i].type === "FILE") await Neutralino.filesystem.removeFile(path + dir[i].entry);
+    else if (dir[i].entry !== "." && dir[i].entry !== "..") {
       await forceRemoveDirectory(`${path}${S}${dir[i].entry}`);
     }
   }
@@ -77,7 +84,7 @@ async function loadCards() {
   const r = Math.floor(Math.random() * 1000); // Prevent caching
   let response = await fetch(`http://${REPO}/spplice/packages/index.php?r=` + r);
 
-  if(response.ok) {
+  if (response.ok) {
     index = await response.json();
   } else {
     document.getElementById("cardlist").innerHTML = `
@@ -92,10 +99,10 @@ async function loadCards() {
   var customDir = await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom`);
 
   // Unarchive packages
-  for(let i = 0; i < customDir.length; i++) {
+  for (let i = 0; i < customDir.length; i++) {
     const curr = customDir[i];
-    if(curr.entry === "." || curr.entry === "..") continue;
-    if(curr.type === "FILE" && curr.entry.endsWith(".tar.gz")) {
+    if (curr.entry === "." || curr.entry === "..") continue;
+    if (curr.type === "FILE" && curr.entry.endsWith(".tar.gz")) {
       await Neutralino.os.execCommand(`${TAR} -xzf "${NL_PATH}${S}custom${S}${curr.entry}" -C "${NL_PATH}${S}custom${S}"`);
       await Neutralino.filesystem.removeFile(`${NL_PATH}/custom/${curr.entry}`);
     }
@@ -103,24 +110,27 @@ async function loadCards() {
 
   // Add to package index
   customDir = await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom`);
-  for(let i = 0; i < customDir.length; i++) {
+  for (let i = 0; i < customDir.length; i++) {
+
     const curr = customDir[i];
-    if(curr.entry === "." || curr.entry === "..") continue;
-    if(curr.type === "DIRECTORY") {
+
+    if (curr.entry === "." || curr.entry === "..") continue;
+    if (curr.type === "DIRECTORY") {
       const manifest = JSON.parse(await Neutralino.filesystem.readFile(`${NL_PATH}/custom/${curr.entry}/manifest.json`));
       manifest.local = true;
       index.packages[index.packages.length] = manifest;
     }
+
   }
 
-  for(let i = 0; i < index.packages.length; i++) {
+  for (let i = 0; i < index.packages.length; i++) {
 
     const curr = index.packages[i];
     let name = curr.name;
     let title = curr.title;
 
     var image;
-    if(("local" in curr) && curr.local) {
+    if (("local" in curr) && curr.local) {
       const base64 = arrayBufferToBase64(await Neutralino.filesystem.readBinaryFile(`${NL_PATH}/custom/${curr.name}/${curr.icon}`));
       image = `data:image/png;base64,${base64}`;
     } else {
@@ -148,12 +158,15 @@ function showInfo(packageID) {
   description.innerHTML = index.packages[packageID].description.replace(/\n/g, "<br>");
   button.onclick = function() {  };
 
-  if(packageID === activePackage) {
+  if (packageID === activePackage) {
+
     button.innerHTML = "Installed";
     button.style.pointerEvents = "none";
     button.style.color = "#424242";
+
   } else {
-    if("local" in index.packages[packageID] && index.packages[packageID].local) {
+
+    if ("local" in index.packages[packageID] && index.packages[packageID].local) {
 
       button.innerHTML = `
         <span id="modinfo-delete" onclick="removePackage(${packageID})">Remove</span><br>
@@ -167,8 +180,10 @@ function showInfo(packageID) {
       `;
 
     }
+
     button.style.pointerEvents = "auto";
     button.style.color = "#faa81a";
+
   }
 
   div.style.opacity = 1;
@@ -197,22 +212,28 @@ function hideInfo() {
 
 function setActivePackage(packageID) {
 
-  if(activePackage >= 0) {
+  if (activePackage >= 0) {
+
     const title = document.getElementsByClassName("card-title")[activePackage];
     title.style.color = "#fff";
+
   }
 
-  if(packageID >= 0) {
+  if (packageID >= 0) {
+
     const title = document.getElementsByClassName("card-title")[packageID];
     title.style.color = "#faa81a";
 
     const clear = document.getElementById("spplice-clear");
     clear.style.pointerEvents = "auto";
     clear.style.opacity = 1;
+
   } else {
+
     const clear = document.getElementById("spplice-clear");
     clear.style.pointerEvents = "none";
     clear.style.opacity = 0;
+
   }
 
   activePackage = packageID;
@@ -223,11 +244,12 @@ function updateSearch() {
 
   const query = document.getElementById("search-input").value.replace(/ /g, "").toLowerCase();
 
-  for(let i = 0; i < index.packages.length; i++) {
+  for (let i = 0; i < index.packages.length; i++) {
 
     const title = index.packages[i].title.replace(/ /g, "").toLowerCase();
     const name = index.packages[i].name.replace(/ /g, "").toLowerCase();
-    if(title.indexOf(query) != -1 || name.indexOf(query) != -1) {
+
+    if (title.indexOf(query) != -1 || name.indexOf(query) != -1) {
       document.getElementsByClassName("card")[i].style.display = "inline-block";
     } else {
       document.getElementsByClassName("card")[i].style.display = "none";
@@ -245,8 +267,9 @@ async function importCustom() {
       extensions: ["tar.gz"]
     }]
   };
+
   const file = (await Neutralino.os.showOpenDialog("Select custom package", filter))[0];
-  if(!file) return;
+  if (!file) return;
 
   try { await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom/.tmp`) }
   catch (e) { await Neutralino.filesystem.createDirectory(`${NL_PATH}/custom/.tmp`) }
@@ -256,21 +279,21 @@ async function importCustom() {
   try {
 
     const tmpdir = await Neutralino.filesystem.readDirectory(`${NL_PATH}/custom/.tmp`);
-    for(let i = 0; i < tmpdir.length; i++) {
-      if(tmpdir[i].entry !== "." && tmpdir[i].entry !== "..") {
+    for (let i = 0; i < tmpdir.length; i++) {
+      if (tmpdir[i].entry !== "." && tmpdir[i].entry !== "..") {
 
         const manifest = JSON.parse(await Neutralino.filesystem.readFile(`${NL_PATH}/custom/.tmp/${tmpdir[i].entry}/manifest.json`));
         manifest.local = true;
 
         var id = -1;
-        for(let j = 0; j < index.packages.length; j++) {
-          if(index.packages[j].name === manifest.name) {
+        for (let j = 0; j < index.packages.length; j++) {
+          if (index.packages[j].name === manifest.name) {
             id = j;
             break;
           }
         }
 
-        if(id === -1) id = index.packages.length;
+        if (id === -1) id = index.packages.length;
         index.packages[id] = manifest;
 
         break;
@@ -319,7 +342,7 @@ async function removePackage(packageID) {
     "WARNING"
   );
 
-  if(choice === "YES") {
+  if (choice === "YES") {
 
     hideInfo();
     await forceRemoveDirectory(`${NL_PATH}/custom/${index.packages[packageID].name}`);
@@ -332,7 +355,7 @@ async function removePackage(packageID) {
 var statusTextTimeout = null;
 function setStatusText(text, hide) {
 
-  if(typeof hide === "undefined") hide = false;
+  if (typeof hide === "undefined") hide = false;
 
   console.log(text);
   let element = document.getElementById("pplaunch-status");
@@ -340,12 +363,14 @@ function setStatusText(text, hide) {
   element.style.opacity = 1;
   element.innerHTML = text;
 
-  if(hide) {
+  if (hide) {
+
     clearTimeout(statusTextTimeout);
     statusTextTimeout = setTimeout(function() {
       element.style.pointerEvents = "none";
       element.style.opacity = 0;
     }, 5000);
+
   }
 
 }

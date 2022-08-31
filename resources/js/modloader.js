@@ -50,7 +50,6 @@ async function getGameProcessInfo() {
       const tlist = Neutralino.os.execCommand(`tasklist /fo csv /nh /fi "IMAGENAME eq portal2.exe"`);
       
       const out = (await Promise.race([timer, tlist])).stdOut;
-      console.log(out);
 
       if (out.indexOf("portal2.exe") === -1) return 0;
       return Number( out.split('"')[3] );
@@ -85,12 +84,15 @@ async function getSteamProcessInfo() {
       const entries = pwsh.split("\n");
 
       for (let i = 0; i < entries.length; i++) {
+        
         const currVal = entries[i].slice(entries[i].indexOf(" : ") + 3);
+
         if (entries[i].startsWith("Id")) curr.pid = Number(currVal);
         else if (entries[i].startsWith("Path")) {
           curr.cmd = `"${currVal}"`;
           curr.path = currVal.slice(0, -10);
         }
+
       }
 
       break;
@@ -126,17 +128,24 @@ async function getSteamProcessInfo() {
 
       let envstr = "";
       for (let i = 0; i < env.length - 1; i ++) {
+
         let currVar = env[i].split(" ");
         let currVal = env[i+1].split(" ");
         currVar = currVar[currVar.length - 1];
+
         if (currVal.length === 1) {
           let nextVar = env[i++].split(" ");
           nextVar = nextVar[nextVar.length - 1];
           currVal = [`${currVal[0]}=${nextVar}`];
-        } else if (i < env.length - 2) currVal.pop();
+        } else if (i < env.length - 2) {
+          currVal.pop();
+        }
+        
         currVal = currVal.join(" ");
         envstr += `export ${currVar}="${currVal}";`;
+
       }
+      
       curr.cmd = `${envstr} "${curr.cmd}"`;
 
       break;
@@ -358,9 +367,11 @@ async function shutdownSpplice() {
   clearInterval(gameCloseInterval);
 
   if (activePackage !== -1) {
+
     const currPID = await getGameProcessInfo();
     if (NL_OS === "Windows") await Neutralino.os.execCommand(`powershell -command "Stop-Process -Id ${currPID}"`);
     else await Neutralino.os.execCommand(`kill ${currPID}`);
+    
   }
 
   if ("path" in game) await installMod(game.path, -1);
@@ -369,6 +380,8 @@ async function shutdownSpplice() {
 
 }
 
-Neutralino.events.on("windowClose", function () {
+Neutralino.events.on("windowClose", function() {
+
   shutdownSpplice();
+
 });
