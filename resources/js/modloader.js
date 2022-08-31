@@ -296,9 +296,15 @@ async function launchMod(packageID) {
     
   }
 
-  setStatusText("Installing package...");
+  if (packageID < 0) setStatusText("Uninstalling package...");
+  else setStatusText("Installing package...");
 
   await installMod(game.path, packageID);
+
+  if (packageID < 0) {
+    setStatusText("Mods cleared", true);
+    return;
+  }
 
   setStatusText("Starting Portal 2...");
 
