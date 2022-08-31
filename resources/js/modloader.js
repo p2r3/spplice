@@ -5,22 +5,38 @@ Neutralino.init();
 
 async function getGameDirectory(steamPath) {
 
-  const dirs = (await Neutralino.filesystem.readFile(steamPath + "steamapps/libraryfolders.vdf")).split('"path"');
+  try {
 
-  for (let i = 1; i < dirs.length; i++) {
-    if (dirs[i].split('"apps"')[1].indexOf('"620"') !== -1) {
+    const dirs = (await Neutralino.filesystem.readFile(steamPath + "steamapps/libraryfolders.vdf")).split('"path"');
 
-      return dirs[i].split('"') // Isolate properties
-        .slice(1) // Jump to start of path 
-        .join('"') // Rebuild string in case path has quotes
-        .split("\n")[0] // Include only this line
-        .slice(0, -1) // Remove last quote
-        .replace(/\\\\/g, "\\") // Fix double backslashes on Windows
-        .replace(/\\"/g, '"') // Fix escaped quotes in path
-        + `${S}steamapps${S}common${S}Portal 2`; // Add Portal 2 directory
+    for (let i = 1; i < dirs.length; i++) {
+      if (dirs[i].split('"apps"')[1].indexOf('"620"') !== -1) {
 
+        return dirs[i].split('"') // Isolate properties
+          .slice(1) // Jump to start of path 
+          .join('"') // Rebuild string in case path has quotes
+          .split("\n")[0] // Include only this line
+          .slice(0, -1) // Remove last quote
+          .replace(/\\\\/g, "\\") // Fix double backslashes on Windows
+          .replace(/\\"/g, '"') // Fix escaped quotes in path
+          + `${S}steamapps${S}common${S}Portal 2`; // Add Portal 2 directory
+
+      }
     }
+
+  } catch (e) {
+    
+    if (typeof e === "object") e = JSON.stringify(e);
+    Neutralino.os.showMessageBox(
+      "Failed to find Portal 2",
+      "An error occured while parsing Steam library data: " + e,
+      "OK",
+      "ERROR"
+    );
+
   }
+
+  return false;
 
 }
 
@@ -262,6 +278,13 @@ async function launchMod(packageID) {
   game.pid = await getGameProcessInfo();
   if (!("path" in game)) {
     game.path = await getGameDirectory(steam.path);
+  }
+
+  if (!game.path) {
+
+    setStatusText("Portal 2 is not installed", true);
+    return;
+
   }
 
   if (game.pid) {
