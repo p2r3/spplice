@@ -100,7 +100,7 @@ async function getSteamProcessInfo() {
     }
     default: {
 
-      const pgrep = (await Neutralino.os.execCommand(`pgrep -af steam`)).stdOut.split("\n");
+      const pgrep = (await Neutralino.os.execCommand(`pgrep -af ubuntu12_32/steam`)).stdOut.split("\n");
 
       let proc = null;
       for (let i = 0; i < pgrep.length; i++) {
