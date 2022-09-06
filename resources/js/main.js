@@ -3,7 +3,7 @@ Neutralino.init();
 // OS-dependant path separators
 const S = (NL_OS === "Windows" ? '\\' : '/');
 // OS-dependant Tar command line
-const TAR = (NL_OS === "Windows" ? "start C:\\Windows\\System32\\tar.exe" : "tar --force-local");
+const TAR = (NL_OS === "Windows" ? "start /B /WAIT C:\\Windows\\System32\\tar.exe" : "tar --force-local");
 // Package repository address
 const REPO = "95.217.182.22";
 
