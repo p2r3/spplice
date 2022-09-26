@@ -7,7 +7,7 @@ async function getGameDirectory(steamPath) {
 
   try {
 
-    const dirs = (await Neutralino.filesystem.readFile(steamPath + "steamapps/libraryfolders.vdf")).split('"path"');
+    const dirs = (await Neutralino.filesystem.readFile(`${steamPath}/steamapps/libraryfolders.vdf`)).split('"path"');
 
     for (let i = 1; i < dirs.length; i++) {
       if (dirs[i].split('"apps"')[1].indexOf('"620"') !== -1) {
@@ -40,120 +40,61 @@ async function getGameDirectory(steamPath) {
 
 }
 
-async function getGameProcessInfo() {
+async function killGame() {
 
   switch (NL_OS) {
-
-    case "Windows": {
-
-      const timer = new Promise(resolve => setTimeout(resolve, 2000, { stdOut: 'portal2.exe"""1' }));
-      const tlist = Neutralino.os.execCommand(`tasklist /fo csv /nh /fi "IMAGENAME eq portal2.exe"`);
-      
-      const out = (await Promise.race([timer, tlist])).stdOut;
-
-      if (out.indexOf("portal2.exe") === -1) return 0;
-      return Number( out.split('"')[3] );
-
-    }
-
-    default: {
-
-      var bin = "portal2_linux";
-      if (NL_OS === "Darwin") bin = "portal2_osx";
-
-      return Number( (await Neutralino.os.execCommand(`pgrep -f ${bin} | grep -Fsv $$`)).stdOut.split("\n")[0] );
-
-    }
-    
+    case "Windows": await Neutralino.os.execCommand('start /b taskkill /fi "IMAGENAME eq portal2.exe" /f');
+    case "Linux"  : await Neutralino.os.execCommand('pkill -9 "portal2_linux"');
+    case "Darwin" : await Neutralino.os.execCommand('pkill -9 "portal2_osx"');
   }
 
 }
 
-async function getSteamProcessInfo() {
+async function getSteamDirectory() {
 
-  const curr = {
-    cmd: "",
-    path: "",
-    pid: 0
-  };
+  try {
 
-  switch (NL_OS) {
-    case "Windows": {
+    if (NL_OS === "Windows") {
+  
+      const reg = (await Neutralino.os.execCommand("reg query HKCU\\SOFTWARE\\Valve\\Steam /v SteamPath")).stdOut;
+      return reg.split("REG_SZ    ").slice(1).join("REG_SZ    ").split("\r\n")[0].replace(/\//g, "\\");
+  
+    } else  {
 
-      const pwsh = (await Neutralino.os.execCommand(`powershell -command "Get-Process 'steam' | Format-List Id,Path"`)).stdOut;
-      const entries = pwsh.split("\n");
-
-      for (let i = 0; i < entries.length; i++) {
-        
-        const currVal = entries[i].slice(entries[i].indexOf(" : ") + 3);
-
-        if (entries[i].startsWith("Id")) curr.pid = Number(currVal);
-        else if (entries[i].startsWith("Path")) {
-          curr.cmd = `"${currVal}"`;
-          curr.path = currVal.slice(0, -10);
-        }
-
-      }
-
-      break;
-
-    }
-    default: {
-
-      const pgrep = (await Neutralino.os.execCommand(`pgrep -af ubuntu12_32/steam`)).stdOut.split("\n");
-
-      let proc = null;
-      for (let i = 0; i < pgrep.length; i++) {
-        if (pgrep[i].endsWith("/steam") || pgrep[i].indexOf("/steam ") > -1) {
-          proc = pgrep[i];
-          break;
-        }
-      }
-      if (!proc) break;
-
-      let proc_split = proc.split(" ");
-      curr.pid = Number(proc_split.shift());
-
-      proc_split = proc_split.join(" ").split("/steam");
-      proc_split.pop();
-      curr.cmd = proc_split.join("/steam") + "/steam";
-
-      const pwdx = (await Neutralino.os.execCommand(`pwdx ${curr.pid}`)).stdOut;
-      curr.path = pwdx.slice(pwdx.indexOf(": ") + 2, -1) + "/";
-
-      let env = (await Neutralino.os.execCommand(`ps eww ${curr.pid}`)).stdOut.replace(/\n/g, " ");
-      env = env.split(curr.cmd);
-      env.shift();
-      env = env.join(curr.cmd).split("=");
-
-      let envstr = "";
-      for (let i = 0; i < env.length - 1; i ++) {
-
-        let currVar = env[i].split(" ");
-        let currVal = env[i+1].split(" ");
-        currVar = currVar[currVar.length - 1];
-
-        if (currVal.length === 1) {
-          let nextVar = env[i++].split(" ");
-          nextVar = nextVar[nextVar.length - 1];
-          currVal = [`${currVal[0]}=${nextVar}`];
-        } else if (i < env.length - 2) {
-          currVal.pop();
-        }
-        
-        currVal = currVal.join(" ");
-        envstr += `export ${currVar}="${currVal}";`;
-
-      }
+      const home = (await Neutralino.os.execCommand("echo $HOME")).stdOut.split("\n")[0];
       
-      curr.cmd = `${envstr} "${curr.cmd}"`;
+      const paths = [
+        "/.steam/steam",
+        "/.local/share/Steam",
+        "/Library/Application Support/Steam",
+        "/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps"
+      ];
+      
+      for (let i = 0; i < paths.length; i ++) {
+        
+        try {
+          const curr = home + paths[i];
+          await Neutralino.filesystem.readDirectory(curr);
+          return curr;
+        } catch (e) {}
 
-      break;
+      }
 
     }
+
+  } catch (e) {
+
+    if (typeof e === "object") e = JSON.stringify(e);
+    Neutralino.os.showMessageBox(
+      "Failed to find Steam",
+      "An error occured while looking for the Steam installation: " + e,
+      "OK",
+      "ERROR"
+    );
+
   }
 
-  return curr;
+  return false;
 
 }
 
@@ -197,9 +138,9 @@ async function installMod(p2path, packageID) {
     try { await Neutralino.filesystem.readFile(path + "/.spplice_tmp") }
     catch (e) { await Neutralino.filesystem.writeFile(path + "/.spplice_tmp", "") }
   
-    await Neutralino.filesystem.createDirectory(path + "/maps").catch();
-    await Neutralino.filesystem.createDirectory(path + "/maps/soundcache").catch();
-    await Neutralino.filesystem.copyFile(path + "/../portal2/maps/soundcache/_master.cache", path + "/maps/soundcache/_master.cache").catch();
+    await Neutralino.filesystem.createDirectory(path + "/maps");
+    await Neutralino.filesystem.createDirectory(path + "/maps/soundcache");
+    await Neutralino.filesystem.copyFile(path + "/../portal2/maps/soundcache/_master.cache", path + "/maps/soundcache/_master.cache");
 
   } catch (e) {
 
@@ -275,44 +216,36 @@ async function launchMod(packageID) {
   clearInterval(gameCloseInterval);
 
   setStatusText("Looking for Steam...");
+  const steamPath = await getSteamDirectory();
 
-  // Gets PID, current path and command line
-  steam = await getSteamProcessInfo();
+  if (!steamPath) {
 
-  if (!steam.pid) {
-
-    setStatusText("Steam is not running", true);
+    setStatusText("Steam is not installed", true);
     return;
 
   }
 
   setStatusText("Looking for Portal 2...");
+  const gamePath = await getGameDirectory(steamPath);
 
-  game.pid = await getGameProcessInfo();
-  if (!("path" in game)) {
-    game.path = await getGameDirectory(steam.path);
-  }
-
-  if (!game.path) {
+  if (!gamePath) {
 
     setStatusText("Portal 2 is not installed", true);
     return;
 
   }
 
-  if (game.pid) {
+  setStatusText("Cleaning up...");
 
-    setStatusText("Closing Portal 2...");
-
-    if (NL_OS === "Windows") await Neutralino.os.execCommand(`powershell -command "Stop-Process -Id ${game.pid}"`);
-    else await Neutralino.os.execCommand(`kill ${game.pid}`);
-    
-  }
+  try { await Neutralino.filesystem.removeFile(`${gamePath}/portal2/cfg/spplicetmp.cfg`) } catch (e) { }
+  try { await Neutralino.filesystem.removeFile(`${steamPath}/GameOverlayRenderer.log`) } catch (e) { }
+  try { await Neutralino.filesystem.removeFile(`${NL_PATH}/steam.log`) } catch (e) { }
+  try { await killGame() } catch (e) { }
 
   if (packageID < 0) setStatusText("Uninstalling package...");
   else setStatusText("Installing package...");
 
-  await installMod(game.path, packageID);
+  await installMod(gamePath, packageID);
 
   if (packageID < 0) {
     setStatusText("Mods cleared", true);
@@ -321,41 +254,46 @@ async function launchMod(packageID) {
 
   setStatusText("Starting Portal 2...");
 
-  if (NL_OS === "Windows") {
-
-    await Neutralino.os.execCommand(`${steam.cmd} -applaunch 620 -tempcontent`);
-
-  } else {
-
-    await Neutralino.os.execCommand(`${steam.cmd} -applaunch 620 -tempcontent &`, { background: true });
-
-  }
+  const steamCmd = NL_OS === "Windows" ? `"${steamPath}${S}steam.exe"` : "steam";
+  Neutralino.os.execCommand(`${steamCmd} -applaunch 620 -tempcontent +host_writeconfig spplicetmp > ${NL_PATH}/steam.log`, { background: true });
 
   setActivePackage(packageID);
 
   // Check if game is running
-  gameStartInterval = setInterval(async function() {
+  gameStartInterval = setInterval(function () {
 
-    if (await getGameProcessInfo()) {
-        
+    Neutralino.filesystem.removeFile(`${gamePath}/portal2/cfg/spplicetmp.cfg`).then(async function () {
+
       setStatusText("Portal 2 started", true);
       clearInterval(gameStartInterval);
 
       // Handle game closing
-      gameCloseInterval = setInterval(async function() {
-        if (!(await getGameProcessInfo())) {
+      gameCloseInterval = setInterval(async function () {
+        
+        if (NL_OS === "Windows") {
 
-          clearInterval(gameCloseInterval);
-
-          setStatusText("Portal 2 closed", true);
-          setActivePackage(-1);
-          installMod(game.path, -1);
-
+          const log = await Neutralino.filesystem.readFile(`${steamPath}/GameOverlayRenderer.log`);
+          if (log.split("GameID = 620").slice(-1)[0].indexOf("Detaching input hook...") === -1) return;
+          
+        } else {
+          
+          const log = await Neutralino.filesystem.readFile(`${NL_PATH}/steam.log`);
+          if (log.indexOf('Game.dll loaded for "Half-Life 2"') === -1) return;
+          
         }
-      }, 1500);
 
-    }
-  }, 3000);
+        clearInterval(gameCloseInterval);
+        Neutralino.filesystem.removeFile(`${NL_PATH}/steam.log`);
+
+        setStatusText("Portal 2 closed", true);
+        setActivePackage(-1);
+        installMod(gamePath, -1);
+
+      }, 1000);
+
+    }, function(){});
+
+  }, 500);
 
 }
 
@@ -366,15 +304,8 @@ async function shutdownSpplice() {
   clearInterval(gameStartInterval);
   clearInterval(gameCloseInterval);
 
-  if (activePackage !== -1) {
-
-    const currPID = await getGameProcessInfo();
-    if (NL_OS === "Windows") await Neutralino.os.execCommand(`powershell -command "Stop-Process -Id ${currPID}"`);
-    else await Neutralino.os.execCommand(`kill ${currPID}`);
-    
-  }
-
-  if ("path" in game) await installMod(game.path, -1);
+  if (activePackage !== -1) await killGame();
+  if ("path" in game) await installMod(gamePath, -1);
 
   Neutralino.app.exit();
 
