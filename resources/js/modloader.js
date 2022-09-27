@@ -43,7 +43,7 @@ async function getGameDirectory(steamPath) {
 async function killGame() {
 
   switch (NL_OS) {
-    case "Windows": await Neutralino.os.execCommand('wmic process where name="portal2.exe" delete');
+    // case "Windows": await Neutralino.os.execCommand('wmic process where name="portal2.exe" delete');
     case "Linux"  : await Neutralino.os.execCommand('pkill -9 "portal2_linux"');
     case "Darwin" : await Neutralino.os.execCommand('pkill -9 "portal2_osx"');
   }
