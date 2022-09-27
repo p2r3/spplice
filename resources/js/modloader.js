@@ -230,7 +230,7 @@ async function launchMod(packageID) {
 
   if (!gamePath) {
 
-    setStatusText("Portal 2 is not installed", true);
+    setStatusText("Portal 2 is not installed, try restarting Steam", true);
     return;
 
   }
