@@ -254,8 +254,11 @@ async function launchMod(packageID) {
 
   setStatusText("Starting Portal 2...");
 
-  const steamCmd = NL_OS === "Windows" ? `"${steamPath}${S}steam.exe"` : "steam";
-  Neutralino.os.execCommand(`${steamCmd} -applaunch 620 -tempcontent +host_writeconfig spplicetmp > ${NL_PATH}/steam.log`, { background: true });
+  if (NL_OS === "Windows") {
+    Neutralino.os.execCommand(`PowerShell Start-Process '${steamPath}${S}steam.exe' '-applaunch 620 -tempcontent +host_writeconfig spplicetmp' -Verb runAs`, { background: true });
+  } else {
+    Neutralino.os.execCommand(`steam -applaunch 620 -tempcontent +host_writeconfig spplicetmp > ${NL_PATH}/steam.log`, { background: true });
+  }
 
   setActivePackage(packageID);
 
