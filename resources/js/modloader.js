@@ -300,6 +300,21 @@ async function launchMod(packageID) {
 
 }
 
+async function launchModFromName(name) {
+  try {
+    for (let i = 0; i < index.packages.length; i++) {
+      const element = index.packages[i];
+      console.log(`${element.name} : ${name}`)
+      if (element.name === name) {
+        launchMod(i);
+        return
+      }
+    }
+  } catch(e) {
+    console.error(`Failed to launch mod ${name}`);
+  }
+}
+
 async function shutdownSpplice() {
 
   setStatusText("Shutting down Spplice...", true);

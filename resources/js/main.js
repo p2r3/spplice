@@ -6,6 +6,10 @@ const S = (NL_OS === "Windows" ? '\\' : '/');
 const TAR = (NL_OS === "Windows" ? "start /B /WAIT C:\\Windows\\System32\\tar.exe" : "tar --force-local");
 // Package repository address
 const REPO = "95.217.182.22";
+// spplice settings
+const SETTINGS = {
+  online: true
+}
 
 async function autoUpdate() {
 
@@ -68,11 +72,11 @@ async function updateResolution() {
   const ogHeightMultip = ogWidth / config.modes.window.height;
 
   const width = (display.dpi / 96) * // 96 dpi reference 
-              (display.resolution.width / 1920) *  // 1920 width reference
-              ogWidth;
+    (display.resolution.width / 1920) *  // 1920 width reference
+    ogWidth;
   const height = width / ogHeightMultip; // 8:5 ratio
 
-  Neutralino.window.setSize({width: width, height: height});
+  Neutralino.window.setSize({ width: width, height: height });
 
 }
 
@@ -82,15 +86,20 @@ async function loadCards() {
   await updateResolution();
 
   const r = Math.floor(Math.random() * 1000); // Prevent caching
-  let response = await fetch(`http://${REPO}/spplice/packages/index.php?r=` + r);
+  if (SETTINGS.online) {
+    let response = await fetch(`http://${REPO}/spplice/packages/index.php?r=` + r);
 
-  if (response.ok) {
-    index = await response.json();
+    if (response.ok) {
+      index = await response.json();
+    } else {
+      document.getElementById("cardlist").innerHTML = `
+        <h1 class="center-text">Failed to connect to Spplice server</h1>
+        <p class="center-text"><i>Response status: ${response.status}</i></p>
+      `;
+    }
   } else {
-    document.getElementById("cardlist").innerHTML = `
-      <h1 class="center-text">Failed to connect to Spplice server</h1>
-      <p class="center-text"><i>Response status: ${response.status}</i></p>
-    `;
+    index = {}
+    index.packages = [];
   }
 
   // Check for local packages
@@ -143,6 +152,8 @@ async function loadCards() {
       </div>
     `;
 
+    // start specified mod
+    loadMod();
   }
 
 }
@@ -156,7 +167,7 @@ function showInfo(packageID) {
 
   title.innerHTML = index.packages[packageID].title;
   description.innerHTML = index.packages[packageID].description.replace(/\n/g, "<br>");
-  button.onclick = function() {  };
+  button.onclick = function () { };
 
   if (packageID === activePackage) {
 
@@ -199,7 +210,7 @@ function hideInfo() {
   const div = document.getElementById("modinfo");
   const button = document.getElementById("modinfo-button");
 
-  button.onclick = function() { };
+  button.onclick = function () { };
   button.style.pointerEvents = "none";
 
   div.style.opacity = 0;
@@ -366,7 +377,7 @@ function setStatusText(text, hide) {
   if (hide) {
 
     clearTimeout(statusTextTimeout);
-    statusTextTimeout = setTimeout(function() {
+    statusTextTimeout = setTimeout(function () {
       element.style.pointerEvents = "none";
       element.style.opacity = 0;
     }, 5000);
@@ -374,3 +385,39 @@ function setStatusText(text, hide) {
   }
 
 }
+
+var loadMod = () => {}
+function parseCommandLineArgs() {
+  const argActions = {};
+  let i;
+
+  // register command line args to scan for
+  argActions['-offline'] = function() {
+    SETTINGS.online = false;
+  }
+  argActions['-start'] = function() {
+    try {
+      const modName = NL_ARGS[i + 1];
+      loadMod = () => launchModFromName(modName);
+      i++;
+    } catch (error) {
+      console.warn(`Failed to start a mod by name.`);
+      console.warn(error);
+    }
+
+  }
+
+  for (i = 1; i < NL_ARGS.length; i++) {
+    const arg = NL_ARGS[i];
+    try {
+      if (arg.indexOf('--')<0 && // double dash is used by neutralinojs
+      arg.length > 0) { 
+        argActions[arg]();
+      }
+    } catch (e) {
+      console.warn(`Argument "${arg}" doesn't exist.`)
+    }
+  }
+}
+
+parseCommandLineArgs();
