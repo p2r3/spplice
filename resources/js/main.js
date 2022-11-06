@@ -167,7 +167,7 @@ function showInfo(packageID) {
 
   title.innerHTML = index.packages[packageID].title;
   description.innerHTML = index.packages[packageID].description.replace(/\n/g, "<br>");
-  button.onclick = function() { };
+  button.onclick = function() {  };
 
   if (packageID === activePackage) {
 
@@ -210,7 +210,7 @@ function hideInfo() {
   const div = document.getElementById("modinfo");
   const button = document.getElementById("modinfo-button");
 
-  button.onclick = function () { };
+  button.onclick = function() { };
   button.style.pointerEvents = "none";
 
   div.style.opacity = 0;
