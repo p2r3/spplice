@@ -300,19 +300,17 @@ async function launchMod(packageID) {
 
 }
 
-async function launchModFromName(name) {
-  if (!name) return;
-  try {
-    for (let i = 0; i < index.packages.length; i++) {
-      const element = index.packages[i];
-      if (element.name === name) {
-        await launchMod(i);
-        return;
-      }
-    }
-  } catch(e) {
-    console.error(`Failed to find and launch mod "${name}"`);
+function launchModFromName(name) {
+
+  const matchName = (element) => element.name === name;
+  const packageID = index.packages.findIndex(matchName);
+
+  if (packageID === -1) {
+    console.warn("Invalid mod name provided, assuming uninstall.");
   }
+
+  launchMod(packageID);
+
 }
 
 async function shutdownSpplice() {
