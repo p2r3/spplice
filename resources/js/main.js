@@ -7,8 +7,9 @@ const TAR = (NL_OS === "Windows" ? "start /B /WAIT C:\\Windows\\System32\\tar.ex
 // Package repository address
 const REPO = "95.217.182.22";
 // spplice settings
-const SETTINGS = {
-  online: true
+var ARGS = {
+  online: true,
+  queuedMod: null
 }
 
 async function autoUpdate() {
@@ -72,11 +73,11 @@ async function updateResolution() {
   const ogHeightMultip = ogWidth / config.modes.window.height;
 
   const width = (display.dpi / 96) * // 96 dpi reference 
-    (display.resolution.width / 1920) *  // 1920 width reference
-    ogWidth;
+              (display.resolution.width / 1920) *  // 1920 width reference
+              ogWidth;
   const height = width / ogHeightMultip; // 8:5 ratio
 
-  Neutralino.window.setSize({ width: width, height: height });
+  Neutralino.window.setSize({width: width, height: height});
 
 }
 
@@ -86,7 +87,7 @@ async function loadCards() {
   await updateResolution();
 
   const r = Math.floor(Math.random() * 1000); // Prevent caching
-  if (SETTINGS.online) {
+  if (ARGS.online) {
     let response = await fetch(`http://${REPO}/spplice/packages/index.php?r=` + r);
 
     if (response.ok) {
@@ -152,10 +153,9 @@ async function loadCards() {
       </div>
     `;
 
-    // start specified mod
-    loadMod();
   }
-
+  // start specified mod
+  launchModFromName(ARGS.queuedMod);
 }
 
 function showInfo(packageID) {
@@ -167,7 +167,7 @@ function showInfo(packageID) {
 
   title.innerHTML = index.packages[packageID].title;
   description.innerHTML = index.packages[packageID].description.replace(/\n/g, "<br>");
-  button.onclick = function () { };
+  button.onclick = function() { };
 
   if (packageID === activePackage) {
 
@@ -377,7 +377,7 @@ function setStatusText(text, hide) {
   if (hide) {
 
     clearTimeout(statusTextTimeout);
-    statusTextTimeout = setTimeout(function () {
+    statusTextTimeout = setTimeout(function() {
       element.style.pointerEvents = "none";
       element.style.opacity = 0;
     }, 5000);
@@ -386,25 +386,23 @@ function setStatusText(text, hide) {
 
 }
 
-var loadMod = () => {}
 function parseCommandLineArgs() {
   const argActions = {};
   let i;
 
   // register command line args to scan for
   argActions['-offline'] = function() {
-    SETTINGS.online = false;
+    ARGS.online = false;
   }
   argActions['-start'] = function() {
     try {
       const modName = NL_ARGS[i + 1];
-      loadMod = () => launchModFromName(modName);
+      ARGS.queuedMod = modName;
       i++;
-    } catch (error) {
+    } catch (e) {
       console.warn(`Failed to start a mod by name.`);
-      console.warn(error);
+      console.warn(e);
     }
-
   }
 
   for (i = 1; i < NL_ARGS.length; i++) {
@@ -419,5 +417,4 @@ function parseCommandLineArgs() {
     }
   }
 }
-
 parseCommandLineArgs();

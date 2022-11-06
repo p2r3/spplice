@@ -301,17 +301,17 @@ async function launchMod(packageID) {
 }
 
 async function launchModFromName(name) {
+  if (!name) return;
   try {
     for (let i = 0; i < index.packages.length; i++) {
       const element = index.packages[i];
-      console.log(`${element.name} : ${name}`)
       if (element.name === name) {
-        launchMod(i);
-        return
+        await launchMod(i);
+        return;
       }
     }
   } catch(e) {
-    console.error(`Failed to launch mod ${name}`);
+    console.error(`Failed to find and launch mod "${name}"`);
   }
 }
 
