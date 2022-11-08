@@ -6,6 +6,11 @@ const S = (NL_OS === "Windows" ? '\\' : '/');
 const TAR = (NL_OS === "Windows" ? "start /B /WAIT C:\\Windows\\System32\\tar.exe" : "tar --force-local");
 // Package repository address
 const REPO = "95.217.182.22";
+// Command line argument values
+const ARGS = {
+  online: true,
+  queuedMod: null
+}
 
 async function autoUpdate() {
 
@@ -76,21 +81,24 @@ async function updateResolution() {
 
 }
 
-var index, activePackage = -1;
+var index = { packages: [] }, activePackage = -1;
 async function loadCards() {
 
   await updateResolution();
 
   const r = Math.floor(Math.random() * 1000); // Prevent caching
-  let response = await fetch(`http://${REPO}/spplice/packages/index.php?r=` + r);
 
-  if (response.ok) {
-    index = await response.json();
-  } else {
-    document.getElementById("cardlist").innerHTML = `
-      <h1 class="center-text">Failed to connect to Spplice server</h1>
-      <p class="center-text"><i>Response status: ${response.status}</i></p>
-    `;
+  if (ARGS.online) {
+    let response = await fetch(`http://${REPO}/spplice/packages/index.php?r=` + r);
+
+    if (response.ok) {
+      index = await response.json();
+    } else {
+      document.getElementById("cardlist").innerHTML = `
+        <h1 class="center-text">Failed to connect to Spplice server</h1>
+        <p class="center-text"><i>Response status: ${response.status}</i></p>
+      `;
+    }
   }
 
   // Check for local packages
@@ -144,6 +152,9 @@ async function loadCards() {
     `;
 
   }
+
+  // Start a mod from the command line
+  if (ARGS.queuedMod) launchModFromName(ARGS.queuedMod);
 
 }
 
@@ -374,3 +385,38 @@ function setStatusText(text, hide) {
   }
 
 }
+
+function parseCommandLineArgs() {
+
+  for (let i = 1; i < NL_ARGS.length; i++) {
+
+    const arg = NL_ARGS[i];
+    if (arg.length === 0) continue;
+    if (arg.indexOf("--") !== -1) continue;
+
+    switch (arg) {
+
+      case "-offline" : {
+        ARGS.online = false;
+        break;
+      }
+      case "-start" : {
+        try {
+          ARGS.queuedMod = NL_ARGS[++i];
+        } catch (e) {
+          console.warn(`Argument "-start" requires a mod name.`);
+        }
+        break;
+      }
+
+      default: {
+        console.warn(`Argument "${arg}" does not exist.`);
+      }
+
+    }
+
+  }
+
+}
+
+parseCommandLineArgs();

@@ -300,6 +300,19 @@ async function launchMod(packageID) {
 
 }
 
+function launchModFromName(name) {
+
+  const matchName = (element) => element.name === name;
+  const packageID = index.packages.findIndex(matchName);
+
+  if (packageID === -1) {
+    console.warn("Invalid mod name provided, assuming uninstall.");
+  }
+
+  launchMod(packageID);
+
+}
+
 async function shutdownSpplice() {
 
   setStatusText("Shutting down Spplice...", true);
