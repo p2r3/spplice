@@ -56,7 +56,7 @@ async function getSteamDirectory() {
 
     if (NL_OS === "Windows") {
   
-      const reg = (await Neutralino.os.execCommand("reg query HKCU\\SOFTWARE\\Valve\\Steam /v SteamPath")).stdOut;
+      const reg = (await Neutralino.os.execCommand(`${REG} query HKCU\\SOFTWARE\\Valve\\Steam /v SteamPath`)).stdOut;
       return reg.split("REG_SZ    ").slice(1).join("REG_SZ    ").split("\r\n")[0].replace(/\//g, "\\");
   
     } else  {
@@ -160,7 +160,7 @@ async function installMod(p2path, packageID) {
   var pkg = `${path}${S}spp.tar.gz`;
   if (!("local" in currPackage) || !currPackage.local) {
 
-    const curl = await Neutralino.os.execCommand(`curl -s ${url} -o"${pkg}"`);
+    const curl = await Neutralino.os.execCommand(`${CURL} -s ${url} -o"${pkg}"`);
     if (curl.exitCode !== 0) {
       Neutralino.os.showMessageBox(
         "Installation failed",
@@ -255,7 +255,7 @@ async function launchMod(packageID) {
   setStatusText("Starting Portal 2...");
 
   if (NL_OS === "Windows") {
-    Neutralino.os.execCommand(`PowerShell Start-Process '${steamPath}${S}steam.exe' '-applaunch 620 -tempcontent +host_writeconfig spplicetmp' -Verb runAs`, { background: true });
+    Neutralino.os.execCommand(`${PWSH} Start-Process '${steamPath}${S}steam.exe' '-applaunch 620 -tempcontent +host_writeconfig spplicetmp' -Verb runAs`, { background: true });
   } else {
     Neutralino.os.execCommand(`steam -applaunch 620 -tempcontent +host_writeconfig spplicetmp > ${NL_PATH}/steam.log`, { background: true });
   }

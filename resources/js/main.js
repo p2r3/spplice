@@ -2,8 +2,11 @@ Neutralino.init();
 
 // OS-dependant path separators
 const S = (NL_OS === "Windows" ? '\\' : '/');
-// OS-dependant Tar command line
+// OS-dependant command line tools
+const REG = "start /B /WAIT C:\\Windows\\System32\\reg.exe";
+const PWSH = "start /B /WAIT C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
 const TAR = (NL_OS === "Windows" ? "start /B /WAIT C:\\Windows\\System32\\tar.exe" : "tar --force-local");
+const CURL = (NL_OS === "Windows" ? "start /B /WAIT C:\\Windows\\System32\\curl.exe" : "curl");
 // Package repository address
 const REPO = "95.217.182.22";
 // Command line argument values
