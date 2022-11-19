@@ -270,6 +270,10 @@ async function launchMod(packageID) {
       setStatusText("Portal 2 started", true);
       clearInterval(gameStartInterval);
 
+      // HACK: Detecting the game closing is unreliable on Windows.
+      // It's better to just skip this step entirely for now.
+      if (NL_OS === "Windows") return;
+
       // Handle game closing
       gameCloseInterval = setInterval(async function () {
         
