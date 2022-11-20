@@ -84,6 +84,41 @@ async function updateResolution() {
 
 }
 
+var mergeMode = false, packageQueue = [];
+function mergeToggle() {
+
+  mergeMode = !mergeMode;
+
+  const element = document.getElementById("merge-container");
+  element.className = mergeMode ? "merge-checked" : "merge-unchecked";
+
+  const button = document.getElementById("spplice-clear");
+
+  if (!mergeMode) {
+
+    const indicators = document.getElementsByClassName("card-queue-indicator");
+    for (let i = 0; i < indicators.length; i++) {
+      indicators[i].style.opacity = 0;
+    }
+
+    packageQueue = [];
+
+    if (activePackage === -1) button.style.opacity = 0;
+    else {
+      button.innerHTML = `<span onclick="launchMod(-1)">clear mods</span>`;
+      button.style.opacity = 1;
+    }
+
+  } else {
+
+    button.innerHTML = `<span onclick="launchMod(packageQueue)">launch queued mods</span>`;
+    if (packageQueue.length === 0) button.style.opacity = 0;
+    else button.style.opacity = 1;
+
+  }
+
+}
+
 var index = { packages: [] }, activePackage = -1;
 async function loadCards() {
 
@@ -150,6 +185,7 @@ async function loadCards() {
 
     document.getElementById("cardlist-insert").innerHTML += `
       <div class="card" style="background-image: url('${image}')" onclick="showInfo(${i})">
+        <p class="card-queue-indicator"></p>
         <p class="card-title">${title}</p>
       </div>
     `;
@@ -172,26 +208,68 @@ function showInfo(packageID) {
   description.innerHTML = index.packages[packageID].description.replace(/\n/g, "<br>");
   button.onclick = function() {  };
 
-  if (packageID === activePackage) {
+  let findActive = false;
+  if (typeof activePackage === "object") {
+    const matchID = (element) => element === packageID;
+    findActive = activePackage.findIndex(matchID) !== -1;
+  }
 
-    button.innerHTML = "Installed";
+  if (packageID === activePackage || findActive) {
+
+    button.innerHTML = '<span style="color: #424242">Installed</span>';
     button.style.pointerEvents = "none";
-    button.style.color = "#424242";
 
   } else {
 
-    if ("local" in index.packages[packageID] && index.packages[packageID].local) {
+    if (mergeMode) {
 
-      button.innerHTML = `
-        <span id="modinfo-delete" onclick="removePackage(${packageID})">Remove</span><br>
-        <span onclick="launchMod(${packageID})">Install and launch<span>
-      `;
+      const matchID = (element) => element === packageID;
+      const queuedID = packageQueue.findIndex(matchID);
+
+      if ("local" in index.packages[packageID] && index.packages[packageID].local) {
+
+        if (queuedID !== -1) {
+          button.innerHTML = `
+            <span id="modinfo-delete" onclick="removePackage(${packageID})">Remove</span><br>
+            <span onclick="unqueueMod(${queuedID})">Remove from queue<span>
+          `;
+        } else {
+          button.innerHTML = `
+            <span id="modinfo-delete" onclick="removePackage(${packageID})">Remove</span><br>
+            <span onclick="queueMod(${packageID})">Add to queue<span>
+          `;
+        }
+
+      } else {
+        
+        if (queuedID !== -1) {
+          button.innerHTML = `
+            <span onclick="unqueueMod(${queuedID})">Remove from queue<span>
+          `;
+        } else {
+          button.innerHTML = `
+            <span onclick="queueMod(${packageID})">Add to queue</span>
+          `;
+        }
+
+      }
 
     } else {
 
-      button.innerHTML = `
-        <span onclick="launchMod(${packageID})">Install and launch</span>
-      `;
+      if ("local" in index.packages[packageID] && index.packages[packageID].local) {
+
+        button.innerHTML = `
+          <span id="modinfo-delete" onclick="removePackage(${packageID})">Remove</span><br>
+          <span onclick="launchMod(${packageID})">Install and launch<span>
+        `;
+
+      } else {
+
+        button.innerHTML = `
+          <span onclick="launchMod(${packageID})">Install and launch</span>
+        `;
+
+      }
 
     }
 
@@ -226,14 +304,35 @@ function hideInfo() {
 
 function setActivePackage(packageID) {
 
-  if (activePackage >= 0) {
+  if (typeof activePackage === "object") {
+
+    for (let i = 0; i < activePackage.length; i++) {
+      const curr = activePackage[i];
+      const title = document.getElementsByClassName("card-title")[curr];
+      title.style.color = "#fff";
+    }
+
+  } else if (activePackage >= 0) {
 
     const title = document.getElementsByClassName("card-title")[activePackage];
     title.style.color = "#fff";
 
   }
 
-  if (packageID >= 0) {
+  if (typeof packageID === "object") {
+
+    for (let i = 0; i < packageID.length; i++) {
+      const curr = packageID[i];
+      const title = document.getElementsByClassName("card-title")[curr];
+      title.style.color = "#faa81a";
+    }
+
+    const clear = document.getElementById("spplice-clear");
+    clear.innerHTML = `<span onclick="launchMod(-1)">clear mods</span>`;
+    clear.style.pointerEvents = "auto";
+    clear.style.opacity = 1;
+
+  } else if (packageID >= 0) {
 
     const title = document.getElementsByClassName("card-title")[packageID];
     title.style.color = "#faa81a";

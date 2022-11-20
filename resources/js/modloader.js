@@ -98,10 +98,8 @@ async function getSteamDirectory() {
 
 }
 
-async function installMod(p2path, packageID) {
+async function tempcontentSetup(path) {
 
-  // Ensure that portal2_tempcontent is ready for package extraction
-  const path = `${p2path}${S}portal2_tempcontent`;
   try {
     const curr = await Neutralino.filesystem.readDirectory(path);
     try {
@@ -121,23 +119,16 @@ async function installMod(p2path, packageID) {
       await Neutralino.filesystem.moveFile(`${p2path}/portal2_tempcontent`, `${tmpPath}/portal2_tempcontent_${tmpNum}`);
 
     }
-  } catch (e) {}
-
-  // Uninstall and exit
-  if (packageID < 0) return;
-
-  // Get package repository URL
-  const currPackage = index.packages[packageID];
-  const url = `http://${REPO}/spplice/packages/${currPackage.name}/${currPackage.file}`;
+  } catch (e) { }
 
   try {
 
     try { await Neutralino.filesystem.readDirectory(path) }
     catch (e) { await Neutralino.filesystem.createDirectory(path) }
-    
+
     try { await Neutralino.filesystem.readFile(path + "/.spplice_tmp") }
     catch (e) { await Neutralino.filesystem.writeFile(path + "/.spplice_tmp", "") }
-  
+
     await Neutralino.filesystem.createDirectory(path + "/maps");
     await Neutralino.filesystem.createDirectory(path + "/maps/soundcache");
     await Neutralino.filesystem.copyFile(path + "/../portal2/maps/soundcache/_master.cache", path + "/maps/soundcache/_master.cache");
@@ -155,6 +146,21 @@ async function installMod(p2path, packageID) {
     return;
 
   }
+
+}
+
+async function installMod(p2path, packageID) {
+
+  // Ensure that portal2_tempcontent is ready for package extraction
+  const path = `${p2path}${S}portal2_tempcontent`;
+  await tempcontentSetup(path);
+
+  // Uninstall and exit
+  if (packageID < 0) return;
+
+  // Get package repository URL
+  const currPackage = index.packages[packageID];
+  const url = `http://${REPO}/spplice/packages/${currPackage.name}/${currPackage.file}`;
 
   // Download (or copy) package
   var pkg = `${path}${S}spp.tar.gz`;
@@ -205,6 +211,161 @@ async function installMod(p2path, packageID) {
 
 }
 
+async function mergeMods(p2path, packageIDs) {
+
+  // Ensure that portal2_tempcontent is ready for package extraction
+  const gpath = `${p2path}${S}portal2_tempcontent`;
+  await tempcontentSetup(gpath);
+
+  // The first loop installs all packages as per usual
+  for (let i = 0; i < packageIDs.length; i++) {
+
+    const path = gpath + `${S}.spplice_merge${i}`;
+    const packageID = packageIDs[i];
+
+    await Neutralino.filesystem.createDirectory(path);
+
+    // Get package repository URL
+    const currPackage = index.packages[packageID];
+    const url = `http://${REPO}/spplice/packages/${currPackage.name}/${currPackage.file}`;
+
+    // Download (or copy) package
+    var pkg = `${path}${S}spp.tar.gz`;
+    if (!("local" in currPackage) || !currPackage.local) {
+
+      const curl = await Neutralino.os.execCommand(`${CURL} -s ${url} -o"${pkg}"`);
+      if (curl.exitCode !== 0) {
+        Neutralino.os.showMessageBox(
+          "Installation failed",
+          "Failed to download package",
+          "OK",
+          "ERROR"
+        );
+        return;
+      }
+
+    } else {
+
+      const path = `${NL_PATH}/custom/${currPackage.name}/${currPackage.file}`;
+      try { await Neutralino.filesystem.copyFile(path, pkg) }
+      catch (e) {
+        Neutralino.os.showMessageBox(
+          "Installation failed",
+          "Failed to copy local package: " + JSON.stringify(e),
+          "OK",
+          "ERROR"
+        );
+        return;
+      }
+    
+    }
+
+    // Install package
+    try {
+      const tar = await Neutralino.os.execCommand(`${TAR} -xzf "${pkg}" -C "${path}"`);
+      if (tar.exitCode !== 0) throw tar.stdErr;
+      await Neutralino.filesystem.removeFile(pkg);
+    } catch (e) {
+      if (typeof e === "object") e = JSON.stringify(e);
+      Neutralino.os.showMessageBox(
+        "Installation failed",
+        "Failed to extract archive: " + e,
+        "OK",
+        "ERROR"
+      );
+      return;
+    }
+
+  }
+
+  let mergeDirectory = async function(root, path) {
+
+    const dir = await Neutralino.filesystem.readDirectory(root + path);
+
+    for (let i = 0; i < dir.length; i++) {
+
+      const source = `${root}${path}${dir[i].entry}`;
+      const destination = `${gpath}${path}${dir[i].entry}`;
+
+      if (dir[i].type === "FILE") {
+
+        if (dir[i].entry.endsWith(".nut")) {
+
+          const data = await Neutralino.filesystem.readFile(source);
+          await Neutralino.filesystem.appendFile(destination, `\n${data}`);
+
+        } else {
+
+          try { await Neutralino.filesystem.removeFile(destination) } catch (e) { }
+          await Neutralino.filesystem.moveFile(source, destination);
+
+        }
+
+      } else if (dir[i].entry !== "." && dir[i].entry !== "..") {
+        
+        try {
+          await Neutralino.filesystem.readDirectory(destination);
+        } catch (e) {
+          await Neutralino.filesystem.createDirectory(destination);
+        }
+
+        await mergeDirectory(root, `${path}${dir[i].entry}${S}`);
+      
+      }
+
+    }
+
+  }
+
+  // The second loop solves conflicts between similar files
+  for (let i = 0; i < packageIDs.length; i++) {
+
+    const path = gpath + `${S}.spplice_merge${i}`;
+    await mergeDirectory(path, S);
+    await forceRemoveDirectory(path);
+
+  }
+
+}
+
+function queueMod(packageID) {
+  
+  packageQueue.push(packageID);
+
+  const indicator = document.getElementsByClassName("card-queue-indicator")[packageID];
+  indicator.style.opacity = 1;
+  indicator.innerHTML = packageQueue.length;
+
+  const clear = document.getElementById("spplice-clear");
+  clear.style.pointerEvents = "auto";
+  clear.style.opacity = 1;
+
+  hideInfo();
+
+}
+
+function unqueueMod(queueID) {
+
+  const packageID = packageQueue[queueID];
+  packageQueue.splice(queueID, 1);
+
+  const indicators = document.getElementsByClassName("card-queue-indicator");
+  indicators[packageID].style.opacity = 0;
+
+  for (let i = 0; i < packageQueue.length; i++) {
+    indicators[packageQueue[i]].innerHTML = i + 1;
+  }
+
+  if (packageQueue.length === 0) {
+    const clear = document.getElementById("spplice-clear");
+    clear.style.pointerEvents = "none";
+    clear.style.opacity = 0;
+  }
+
+  hideInfo();
+
+}
+
 var gameStartInterval, gameCloseInterval;
 
 async function launchMod(packageID) {
@@ -242,10 +403,12 @@ async function launchMod(packageID) {
   try { await Neutralino.filesystem.removeFile(`${NL_PATH}/steam.log`) } catch (e) { }
   try { await killGame() } catch (e) { }
 
-  if (packageID < 0) setStatusText("Uninstalling package...");
+  if (mergeMode) setStatusText("Installing packages...");
+  else if (packageID < 0) setStatusText("Uninstalling package...");
   else setStatusText("Installing package...");
 
-  await installMod(gamePath, packageID);
+  if (mergeMode) await mergeMods(gamePath, packageID);
+  else await installMod(gamePath, packageID);
 
   if (packageID < 0) {
     setStatusText("Mods cleared", true);
@@ -260,6 +423,8 @@ async function launchMod(packageID) {
     Neutralino.os.execCommand(`steam -applaunch 620 -tempcontent +host_writeconfig spplicetmp > ${NL_PATH}/steam.log`, { background: true });
   }
 
+  mergeMode = true;
+  mergeToggle();
   setActivePackage(packageID);
 
   // Check if game is running

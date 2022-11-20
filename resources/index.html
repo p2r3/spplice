@@ -15,6 +15,11 @@
       <img src="search.png" id="search-icon"><input id="search-input" type="text" placeholder="Search" oninput="updateSearch()">
     </div>
 
+    <div id="merge-container" class="merge-unchecked">
+      <span id="merge-checkbox" onclick="mergeToggle()">✓</span>
+      <p id="merge-title" onclick="mergeToggle()">Select Multiple</p>
+    </div>
+
     <div id="cardlist">
       <span id="cardlist-insert"></span>
       <div class="card" style="background-image: url('add.png')" onclick="importCustom()"></div>
