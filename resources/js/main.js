@@ -210,8 +210,7 @@ function showInfo(packageID) {
 
   let findActive = false;
   if (typeof activePackage === "object") {
-    const matchID = (element) => element === packageID;
-    findActive = activePackage.findIndex(matchID) !== -1;
+    findActive = activePackage.includes(packageID);
   }
 
   if (packageID === activePackage || findActive) {
