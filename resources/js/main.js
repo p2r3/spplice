@@ -521,3 +521,15 @@ function parseCommandLineArgs() {
 }
 
 parseCommandLineArgs();
+
+function spplice2PopupClose () {
+
+  const div = document.getElementById("spplice2-popup");
+
+  div.style.opacity = 0;
+  div.style.transform = "translateY(calc(-50% + 5vh))";
+  div.style.setProperty("backdrop-filter", "blur(0px)");
+  div.style.setProperty("-webkit-backdrop-filter", "blur(0px)");
+  div.style.pointerEvents = "none";
+
+}

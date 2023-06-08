@@ -308,3 +308,49 @@ i {
 .merge-checked #merge-title {
   color: #faa81a;
 }
+
+.gradient-text {
+  color: rgb(23, 192, 233);
+  background: rgb(7, 139, 231);
+  background: -moz-linear-gradient(135deg, rgba(7, 139, 231, 1) 0%, rgba(53, 200, 236, 1) 100%);
+  background: -webkit-linear-gradient(135deg, rgba(7, 139, 231, 1) 0%, rgba(53, 200, 236, 1) 100%);
+  background: linear-gradient(135deg, rgba(7, 139, 231, 1) 0%, rgba(53, 200, 236, 1) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#spplice2-popup {
+  position: fixed;
+  left: 25%;
+  width: 50%;
+  top: 50%;
+  border: 2px solid white;
+  border-radius: 15px;
+  padding: 15px;
+  box-sizing: border-box;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  background-color: rgba(0, 0, 0, 0.75);
+  opacity: 1;
+  transform: translateY(-50%);
+  will-change: opacity, transform;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+#spplice2-popup h2 {
+  text-align: center;
+}
+
+#spplice2-popup p {
+  text-align: center;
+}
+
+#spplice2-popup-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
